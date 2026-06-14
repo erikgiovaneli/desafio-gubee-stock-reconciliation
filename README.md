@@ -119,4 +119,4 @@ Abaixo estão os payloads aceitos pela API para os diferentes fluxos de negócio
 
    Processamento Assíncrono: Eventos classificados como PENDING (ex: um cancelamento que chega antes da criação do pedido) são persistidos com segurança no banco de dados, porém necessitam de um Worker (@Scheduled ou consumer em background) para reprocessá-los, mecanismo este não incluído no escopo inicial.
 
-   Detalhamento das Decisões: Mais detalhes sobre a arquitetura e justificativas de trade-offs podem ser encontrados no arquivo DECISIONS.md.
+   **Detalhamento das Decisões:** Mais detalhes sobre a arquitetura e justificativas de trade-offs podem ser encontrados no arquivo [DECISIONS.md](DECISIONS.md).
