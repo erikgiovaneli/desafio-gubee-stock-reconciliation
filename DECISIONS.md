@@ -37,8 +37,8 @@ Adotou-se o modelo onde o **mecanismo de reconciliação interno da Gubee atua c
 
 ### 5.8 Controle de SKU Global vs Marketplace Specific
 A chave de controle do saldo adotada na tabela `StockBalance` foi composta estritamente por `accountId + sku` (SKU Global por Conta). Essa abordagem foi escolhida para refletir o modelo de **Inventário Omnichannel**, onde o estoque físico do vendedor é compartilhado de forma unificada entre todos os canais de venda (Mercado Livre, Shopee, etc.). Controlar o estoque isoladamente por marketplace geraria o risco de "furo de estoque", impedindo que uma venda em um canal decrementasse o saldo disponível para os demais.
----
 
+---
 ## ⚖️ Trade-offs e Evolução Arquitetural (Próximos Passos para Produção)
 
 Para o escopo atual do desafio técnico, foram assumidas simplificações estratégicas que, em um cenário de produção de altíssima escala, evoluiriam da seguinte forma:
