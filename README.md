@@ -114,6 +114,7 @@ Abaixo estão os payloads aceitos pela API para os diferentes fluxos de negócio
    
    
 6. **Limitações Conhecidas**
+   
    Mensageria: Por simplificação de prazo, a fila de processamento (Kafka/RabbitMQ) foi emulada diretamente via chamadas síncronas na API REST.
 
    Processamento Assíncrono: Eventos classificados como PENDING (ex: um cancelamento que chega antes da criação do pedido) são persistidos com segurança no banco de dados, porém necessitam de um Worker (@Scheduled ou consumer em background) para reprocessá-los, mecanismo este não incluído no escopo inicial.
