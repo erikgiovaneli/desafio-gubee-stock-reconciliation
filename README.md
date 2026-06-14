@@ -9,6 +9,7 @@ Serviço de reconciliação de estoque responsável por processar eventos de mar
 - **PostgreSQL 15** (Banco de dados relacional)
 - **Docker & Docker Compose** (Ambiente de banco de dados isolado)
 - **Maven** (Gerenciador de dependências)
+- **JUnit 5 & Mockito** (Suíte de testes automatizados)
 
 ## 📋 Pré-requisitos
 
