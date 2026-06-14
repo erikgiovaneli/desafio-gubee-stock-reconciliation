@@ -20,7 +20,7 @@ Este documento descreve as premissas, padrões de projeto e soluções de engenh
 ### 5.1 Idempotência
 Cada requisição HTTP que chega ao endpoint é validada contra a tabela `EventStore`. O `eventId` enviado pelo parceiro é utilizado diretamente como a Chave Primária (Primary Key) da tabela. Se o ID do evento já existir no banco de dados, o processamento é interrompido imediatamente e o status retornado é `IGNORED`, impedindo baixas ou acréscimos duplicados de estoque causados por retentativas de rede (*network retries*).
 
-### 5.2 e 5.6 Duplicidade Lógica (Cancelamentos e Recomposições)
+### 5.2 Duplicidade Lógica (Cancelamentos e Recomposições)
 O motor de regras intercepta eventos do tipo `ORDER_CANCELLED` e `MARKETPLACE_STOCK_RESTORED` e verifica no histórico de transações se o pedido (`externalOrderId`) já sofreu alguma ação prévia de devolução de estoque com sucesso (`PROCESSED`). Caso positivo, o novo evento idêntico é classificado como `IGNORED`, blindando o saldo contra comportamentos instáveis ou duplicados dos Marketplaces.
 
 ### 5.3 Eventos Fora de Ordem (Race Conditions de Fluxo)
@@ -32,13 +32,18 @@ O sistema protege a consistência do inventário físico impedindo que uma venda
 ### 5.5 Rastreabilidade Total (Padrão Ledger / Livro Razão)
 Toda e qualquer alteração matemática aplicada ao saldo de um SKU gera, na mesma transação, um registro imutável na tabela `StockHistory`. O histórico armazena o impacto exato da operação (ex: `-2` para vendas, `+5` para ajustes) e o saldo consolidado imediatamente após o evento (`balanceAfter`), permitindo reconstruir e auditar perfeitamente a linha do tempo do estoque.
 
+### 5.6 Fonte da Verdade do Estoque
+Adotou-se o modelo onde o **mecanismo de reconciliação interno da Gubee atua como o Ledger (Livro Razão) autoritativo do saldo**. No entanto, reconhece-se que o inventário físico real do parceiro é soberano. Por isso, eventos do tipo `STOCK_ADJUSTED` funcionam como um *State Reset* (sobrescrevendo o saldo atual com o valor físico auditado), enquanto eventos de pedidos (`ORDER_CREATED`), cancelamentos (`ORDER_CANCELLED`) e recomposições funcionam como modificadores incrementais baseados no estado anterior.
+
+### 5.8 Controle de SKU Global vs Marketplace Specific
+A chave de controle do saldo adotada na tabela `StockBalance` foi composta estritamente por `accountId + sku` (SKU Global por Conta). Essa abordagem foi escolhida para refletir o modelo de **Inventário Omnichannel**, onde o estoque físico do vendedor é compartilhado de forma unificada entre todos os canais de venda (Mercado Livre, Shopee, etc.). Controlar o estoque isoladamente por marketplace geraria o risco de "furo de estoque", impedindo que uma venda em um canal decrementasse o saldo disponível para os demais.
 ---
 
 ## ⚖️ Trade-offs e Evolução Arquitetural (Próximos Passos para Produção)
 
 Para o escopo atual do desafio técnico, foram assumidas simplificações estratégicas que, em um cenário de produção de altíssima escala, evoluiriam da seguinte forma:
 
-1. **Concorrência Concorrente (Race Conditions):**
+1. **Alta Concorrência e Race Conditions:**
    A entidade `StockBalance` conta com a anotação `@Version` do JPA para Controle de Concorrência Otimista (*Optimistic Locking*). Para cenários de altíssimo volume de vendas simultâneas no mesmo SKU, a estratégia seria evoluída para **Pessimistic Locking** (`@Lock(LockModeType.PESSIMISTIC_WRITE)`) no momento da busca do saldo, garantindo o bloqueio da linha a nível de banco de dados durante a escrita.
 
 2. **Migração para Mensageria Assíncrona:**

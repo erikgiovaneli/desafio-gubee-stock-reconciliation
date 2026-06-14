@@ -49,8 +49,10 @@ public class StockReconciliationService {
         eventStore.setReason(dto.reason());
         eventStore.setQuantitySent(dto.quantitySent());
 
+        // BLOCO UNIFICADO PARA CONTEXTO DE PEDIDOS (Cancelamentos e Recomposições)
         if (dto.type() == EventType.ORDER_CANCELLED || dto.type() == EventType.MARKETPLACE_STOCK_RESTORED) {
-            //REQUISITO 5.2 & 5.6: Duplicidade Lógica / Cenário 5 e 8 (Cancelamentos e Recomposições duplicadas)
+
+            //REQUISITO 5.2 & 5.6: Duplicidade Lógica / Cenário 5 e 8
             boolean jaFoiDevolvido = eventStoreRepository.existsByExternalOrderIdAndTypeAndSkuAndStatus(
                     dto.externalOrderId(), EventType.ORDER_CANCELLED.name(), dto.sku(), EventStatus.PROCESSED.name()
             ) || eventStoreRepository.existsByExternalOrderIdAndTypeAndSkuAndStatus(
@@ -62,9 +64,8 @@ public class StockReconciliationService {
                 eventStoreRepository.save(eventStore);
                 return EventStatus.IGNORED; // Ignora para não duplicar a recomposição de estoque
             }
-        }
-        //REQUISITO 5.3: Eventos fora de ordem (Cancelamento antes da Criação do pedido)
-        if (dto.type() == EventType.ORDER_CANCELLED) {
+
+            //REQUISITO 5.3: Eventos fora de ordem / Cenário 6
             boolean existePedidoCriado = eventStoreRepository.existsByExternalOrderIdAndTypeAndSkuAndStatus(
                     dto.externalOrderId(), EventType.ORDER_CREATED.name(), dto.sku(), EventStatus.PROCESSED.name()
             );
@@ -82,7 +83,7 @@ public class StockReconciliationService {
 
         switch (dto.type()){
             case STOCK_ADJUSTED:
-                // Cenário 1: Ajuste manual define o valor absoluto absoluto
+                // Cenário 1: Ajuste manual define o valor absoluto
                 quantityChanged = dto.available() - balance.getQuantity();
                 balance.setQuantity(dto.available());
                 break;
@@ -117,7 +118,7 @@ public class StockReconciliationService {
         balance.setLastUpdated(Instant.now());
         stockBalanceRepository.save(balance);
 
-        //REQUISITO 5.5: Rastreabilidade (Gravar a Linha do Tempo / Auditoria)
+        // REQUISITO 5.5: Rastreabilidade (Gravar a Linha do Tempo / Auditoria)
         StockHistory history = new StockHistory(
                 dto.accountId(),
                 dto.sku(),
